@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0b0f14" />
+  <title>FitCam AI — Camera Fitness Tracker</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏋️</text></svg>" />
+</head>
+<body>
+  <!-- ══════════════ HEADER ══════════════ -->
+  <header class="app-header">
+    <div class="brand">
+      <span class="brand-logo">🏋️</span>
+      <div>
+        <h1>FitCam AI</h1>
+        <p class="tagline">Rep counting &amp; form coaching in your browser</p>
+      </div>
+    </div>
+    <span class="privacy-badge" title="Video never leaves your device">🔒 100% on-device — no upload</span>
+  </header>
+
+  <main class="app-main">
+    <!-- ══════════════ CAMERA STAGE ══════════════ -->
+    <section class="stage-card card">
+      <div class="cam-stage" id="camStage">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="overlay"></canvas>
+
+        <!-- Shown until the camera is running -->
+        <div class="cam-placeholder" id="camPlaceholder">
+          <div class="cam-placeholder-inner">
+            <span class="cam-icon">📷</span>
+            <p id="camStatusText">Tap <strong>Start</strong> to turn on the camera.</p>
+            <button class="btn primary" id="btnEnableCam">Enable camera</button>
+            <p class="hint">Your video is processed locally and never sent anywhere.</p>
+          </div>
+        </div>
+
+        <div class="cam-topbar">
+          <span class="pill" id="statusPill">Camera off</span>
+          <span class="pill" id="metricPill"></span>
+          <span class="pill" id="fpsPill"></span>
+        </div>
+        <div class="angle-tip" id="angleTip">📷 Pick an exercise to see the best camera angle.</div>
+      </div>
+
+      <!-- Big live feedback banner -->
+      <div class="feedback-banner" id="feedbackBanner" data-level="info">
+        <span id="feedbackIcon">ℹ️</span>
+        <span id="feedbackText">Choose an exercise, then press Start.</span>
+      </div>
+    </section>
+
+    <!-- ══════════════ EXERCISE PICKER ══════════════ -->
+    <section class="exercise-picker" id="exercisePicker" aria-label="Choose exercise"></section>
+
+    <!-- ══════════════ DASHBOARD ══════════════ -->
+    <section class="dashboard" aria-label="Workout dashboard">
+      <div class="card stat-card reps-card">
+        <span class="stat-label">Reps</span>
+        <span class="stat-big" id="repCount">0</span>
+        <span class="stat-sub" id="repTarget">/ 12</span>
+        <span class="stat-sub" id="missedCount"></span>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Sets</span>
+        <span class="stat-value" id="setCount">0</span>
+        <span class="stat-sub" id="setTargetSub">target 12 reps</span>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Form score</span>
+        <span class="stat-value" id="formScore">—</span>
+        <span class="badge" id="formBadge">—</span>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Avg form</span>
+        <span class="stat-value" id="avgForm">—</span>
+        <span class="stat-sub" id="avgFormSub">this exercise</span>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Time</span>
+        <span class="stat-value mono" id="timer">00:00</span>
+        <span class="stat-sub" id="phaseSub">phase: —</span>
+      </div>
+      <div class="card stat-card">
+        <span class="stat-label">Rest</span>
+        <span class="stat-value mono" id="restTimer">—</span>
+        <span class="stat-sub" id="restSub">between sets</span>
+      </div>
+    </section>
+
+    <!-- ══════════════ CONTROLS ══════════════ -->
+    <section class="controls">
+      <button class="btn primary big" id="btnStart">▶ Start</button>
+      <button class="btn big" id="btnPause" disabled>⏸ Pause</button>
+      <button class="btn big" id="btnReset">↺ Reset</button>
+      <button class="btn danger big" id="btnFinish">■ Finish</button>
+    </section>
+
+    <!-- ══════════════ SETTINGS ══════════════ -->
+    <section class="card settings">
+      <h2>Settings</h2>
+      <div class="settings-grid">
+        <label>Target reps
+          <input type="number" id="inTarget" min="1" max="100" value="12" inputmode="numeric" />
+        </label>
+        <label>Rest (sec)
+          <input type="number" id="inRest" min="0" max="600" value="60" inputmode="numeric" />
+        </label>
+        <label>Weight (kg)
+          <input type="number" id="inWeight" min="20" max="250" value="70" inputmode="decimal" />
+        </label>
+        <label>Model quality
+          <select id="inModel">
+            <option value="lite">Lite — fastest</option>
+            <option value="full" selected>Full — balanced</option>
+            <option value="heavy">Heavy — most accurate</option>
+          </select>
+        </label>
+        <label class="check"><input type="checkbox" id="inVoice" checked /> Voice feedback</label>
+        <label class="check"><input type="checkbox" id="inMirror" checked /> Mirror camera</label>
+      </div>
+    </section>
+
+    <!-- ══════════════ HISTORY / WEEKLY CHART ══════════════ -->
+    <section class="card history">
+      <div class="history-head">
+        <h2>Weekly progress</h2>
+        <button class="btn tiny" id="btnClearHistory">Clear</button>
+      </div>
+      <div class="week-stats" id="weekStats">No workouts yet this week.</div>
+      <canvas id="weekChart" height="200"></canvas>
+      <h3>Recent workouts</h3>
+      <ul class="history-list" id="historyList">
+        <li class="empty">Finish a workout to start your history.</li>
+      </ul>
+    </section>
+  </main>
+
+  <!-- ══════════════ WORKOUT SUMMARY MODAL ══════════════ -->
+  <div class="modal-backdrop" id="summaryModal" hidden>
+    <div class="modal card" role="dialog" aria-modal="true" aria-labelledby="summaryTitle">
+      <h2 id="summaryTitle">💪 Workout summary</h2>
+      <div class="summary-grid" id="summaryGrid"></div>
+      <div class="summary-totals" id="summaryTotals"></div>
+      <div class="modal-actions">
+        <button class="btn" id="btnCloseSummary">Close</button>
+        <button class="btn primary" id="btnNewWorkout">New workout</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Global error banner (camera / model problems) -->
+  <div class="error-banner" id="errorBanner" hidden>
+    <span id="errorText"></span>
+    <button class="btn tiny" id="btnDismissError">✕</button>
+  </div>
+
+  <footer class="app-footer">
+    Runs fully in your browser · MediaPipe Pose (33 landmarks) · Video never uploaded ·
+    History saved locally in your browser
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
